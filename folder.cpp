@@ -40,7 +40,9 @@ QMutex* Folder::currentFolderMutex(){
 #include <windows.h>
 #include <tchar.h>
 #else // linux stuff
-
+#include <linux/hdreg.h>
+#include <fcntl.h>
+#include <sys/ioctl.h>
 #endif // _WIN32
 
 
@@ -83,9 +85,10 @@ QString Folder::getDriveSerial() const {
     }
 
     if(!ioctl(fd, HDIO_GET_IDENTITY, &id)) {
-        hardwareID = id.serial_no;
+        const char* serial = (char*)id.serial_no;
+        return serial;
     }
-
+    return 0;
 #endif
 
 }

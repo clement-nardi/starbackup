@@ -78,18 +78,26 @@ int main(int argc, char *argv[])
 
     QSharedMemory sm ("StarBackupInstance");
     if (!sm.create(1)) {
-        /*
+        printf("%s",sm.errorString().toAscii().constData());
         QMessageBox msgBox;
         msgBox.setText(QString("StarBackup is already running!"));
         msgBox.setIcon(QMessageBox::Warning);
         msgBox.setStandardButtons(QMessageBox::Ok);
         msgBox.setDefaultButton(QMessageBox::No);
+/* Fuck you, what if the previous instance crashed^wwaskilled and the sm still exists ??
 
+  If I understand well what you're trying to do, why don't you use QtSingleApplication ?
+*/
+/*      sm.attach();
+#if 0*/
         int ret = msgBox.exec();
-        */
+
         QSystemSemaphore sem("StarBackupSemaphore", 0, QSystemSemaphore::Open);
         sem.release(1);
+
         exit(0);
+
+/*#endif*/
     }
 
     QCoreApplication::setOrganizationName("StarBackup");

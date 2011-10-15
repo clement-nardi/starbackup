@@ -1010,8 +1010,8 @@ bool getFreeTotalSpace(QString sDirPath,qlonglong *fTotal, qlonglong *fFree)
     struct stat stst;
     struct statfs stfs;
 
-    if ( ::stat(sDirPath.local8Bit(),&stst) == -1 ) return false;
-    if ( ::statfs(sDirPath.local8Bit(),&stfs) == -1 ) return false;
+    if ( ::stat(sDirPath.toLocal8Bit(),&stst) == -1 ) return false;
+    if ( ::statfs(sDirPath.toLocal8Bit(),&stfs) == -1 ) return false;
 
     *fFree  = stfs.f_bavail * ( stst.st_blksize );
     *fTotal = stfs.f_blocks * ( stst.st_blksize );
