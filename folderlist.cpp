@@ -102,7 +102,11 @@ QString FolderList::commonParent(){
         }
         QString result;
         for (int i = 0; i <= lastCommon; i++) {
-            result = addPaths(result, splitList.at(i));
+            if (i==0) {
+                result = splitList.at(i);
+            } else {
+                result = result + "/" + splitList.at(i);
+            }
         }
         return result;
     }
