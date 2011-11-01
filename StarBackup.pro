@@ -70,8 +70,5 @@ static { # everything below takes effect with CONFIG += static
 #    win32: TARGET = $$join(TARGET,,,s) #this adds an s in the end, so you can seperate static build from non static build
 }
 
-
-
-
-
+unix:!macx:!symbian: LIBS += -lblkid
 

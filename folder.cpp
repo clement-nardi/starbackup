@@ -39,10 +39,12 @@ QMutex* Folder::currentFolderMutex(){
 #ifdef _WIN32
 #include <windows.h>
 #include <tchar.h>
+
 #else // linux stuff
-#include <linux/hdreg.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
+#include <sys/stat.h>
+#include <mntent.h>
+#include <cstdlib>
+#include <blkid/blkid.h>
 #endif // _WIN32
 
 
@@ -67,28 +69,49 @@ QString Folder::getDriveSerial() const {
     Folder::currentFolderMutex()->unlock();
 
     TRACE(qDebug() << "Serial=" << volSerial
-                   << " Name="  << QString((QChar*)volName)
-                   << " FS="    << QString((QChar*)volFS)
-                   << " for "   << *this);
+          << " Name="  << QString((QChar*)volName)
+          << " FS="    << QString((QChar*)volFS)
+          << " for "   << *this);
     return QString("%1 %2 %3").arg(volSerial).arg(QString((QChar*)volName)).arg(QString((QChar*)volFS)) ;
 
 #else
-    //for linux implementation: http://lists.trolltech.com/qt-interest/2004-11/msg01098.html
+    /* We'll return the UUID ofthe partition holding the file */
 
-    struct hd_driveid id;
+    const char* curDir = QDir::current().absolutePath().toAscii().constData();
+    char* partitionDevice = NULL;
+    /* First, we need to find the partition */
+    struct stat file_st, mount_st;
+    if (stat(curDir, &file_st) != 0) return "";     /* Woups. */
 
-    int fd = open("/dev/hda", O_RDONLY|O_NONBLOCK);
+    struct mntent mnt;
+    char buf[512];
+    char const *table = _PATH_MOUNTED;
+    FILE *fp;
 
-    if (fd < 0)
-    {
-        perror("/dev/hda");
+    fp = setmntent (table, "r");
+    if (fp == NULL)
+        return "";
+
+    while (getmntent_r(fp,&mnt,buf,sizeof(buf))){
+        if(stat(mnt.mnt_dir,&mount_st)==0&&(file_st.st_dev==mount_st.st_dev)){
+            partitionDevice = canonicalize_file_name(mnt.mnt_fsname);
+            break;
+        }
     }
+    endmntent (fp);
+    if(partitionDevice==NULL)
+        return "";
 
-    if(!ioctl(fd, HDIO_GET_IDENTITY, &id)) {
-        const char* serial = (char*)id.serial_no;
-        return serial;
+    /* OK; we have the partition device. Go for the UUID */
+    QString str;
+    char *value;
+    if ((value = blkid_get_tag_value(NULL, "UUID", partitionDevice))) {
+        str = QString(value);
+        std::free(value);
     }
-    return 0;
+    TRACE(qDebug() << "UUID " << str << " for " << *this);
+    return str;
+
 #endif
 
 }
@@ -99,7 +122,7 @@ void Folder::loadHardwareID() {
 
 bool Folder::checkHardwareID() const {
     bool sameID = (hardwareID == getDriveSerial()) ||
-                  (hardwareID == "");
+            (hardwareID == "");
     return sameID;
 }
 

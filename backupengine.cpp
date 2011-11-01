@@ -897,7 +897,7 @@ void BackupEngine::processFile(int baseIdx, QFileInfo file, QString relDir) {
 }
 QString BackupEngine::speed() {
     QString res = "";
-    if (nbBytesTransfered>0) {
+    if (nbBytesTransfered>0&&transferTimeMili!=0) {
         res = QString(" @%1/s").arg(FileSystemTools::size2Str(nbBytesTransfered*1000/transferTimeMili));
     }
     return res;
